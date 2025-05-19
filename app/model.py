@@ -1,11 +1,89 @@
+
+import os
+import json
+import requests 
+import numpy as pd 
+import pandas as pd
+from CeneoWebScraperCS12.config import headers 
+from bs4 import BeautifulSoup 
+from matplotlib import pyplot as plt
+
+
 class Product:
-    def __init__(self):
-        pass
+
+    def __init__(self, product_id, product_name, opinions, stats):
+        self.product_id= product_id
+        self.product_name= product_name
+        self.opinions = opinions
+        self.stats = stats
+
+    def __str__(self):
+        return f"product_id:{self.product_id}\nproduct_name: {self.product_name}\nstats: "+json.dumps(self.stats, indent=4,
+        ensure_asci=False)+"\nopinions"+"\n\n".join([str(opinion) for opinion in self.opinions])
+    
+    def __repr__(self):
+        return f"Product(product_id={self.product_id}, product_name={self.product_name}, opinions= ["+", ".join(repr(opinion) for opinion
+        in self.opinions) +f'"], stats ={self.status})"
+    
+
+    def get_link(self):
+        return f"https://www.ceneo.pl/{self.product_id}#tab=review"
+
+    def extract_name(self):
+        response = requests.get(self.get_link(), headers = headers )
+        page_dom = BeautifulSoup(response.text, 'html.parser')
+        self.product_name = page_dom.select_one( "h1" )
+
+    def opinions_to_dict(self):
+        return [opinion.to_dict() for opiniopn in self.opinions]
+
+    def calculate_stats(self):
+        opinions = pd.DataFrame.from_dict(self.opinions_to_dict())
+        self.stats['opinions_count'] = opinions.shape[0]
+        self.stats['pros_count'] = opinions.pros_pl.astype(bool).sum()
+        self.stats['cons_count'] = opinions.cons_pl.astype(bool).sum()
+        self.stats['pros_cons_count'] = opinions.apply(lambda o: bool (o.pros_pl) and bool (o.cons_pl), ascis =1).sum()
+        self.stats['average_stats'] = opinions.stars.mean()
+        self.stats['cons'] = opinions.cons_en.explode().value_counts()
+        self.stats['pros'] = opinions.pros_en.explode().value_counts()
+        self.stats['recomendations'] = opinions.recommend.value_counts(dropna=False).reindex([True, False, np.nan],fill_value=0)
+        self.stats['starts'] = opinions.stars = opinions.stars.value_counts().reindex(list(np.arange(0.5,5.5,0.5)), fill_value=0)
+
+    def generate_charts(self):
+        if not os.path.exists(".app/static/pie_charts"):
+            os.mkdir("./pie_charts")
+        if not os.path.exists("./bar_charts"):
+            os.mkdir("./bar_charts")
+        self.stats["recomendations"].plot.pie(
+        autport = 
+        recomendations.plot.pie(
+
+        label = "",
+        labels = [ "Recommend", "Not recommended", "No opinion"], 
+        colors = ['#77dd77', '#ffb6c1', '#fffac8'],
+        autopct = lambda r: f"{r:.1f}%" if r>0 else ''
+        )
+    
+    plt.title(f"Recommendations for product {self.product_id}\nTotal number of opinions: {self.stats}",fontname='Comic Sans MS')
+    plt.savefig(f"./pie_charts/{product_id}.png")
+    plt.close()
 
 class Opinion:
-    selectors = {
 
-    }
+    selectors = {
+    'opinion_id': (None,"data-entry-id"),
+    'author':("span.user-post__author-name",),
+    'recommend' :("span.user-post__author-recomendation>em",),
+    'stars': ( "span.user-post__score-count",),
+    'content_pl': ( "div.user-post__text",),
+    'pros_pl':("div.review-feature__item--negative", None, True),
+    'cons_pl': ("div.review-feature__item--negative", None, True),
+    'up_votes':("button.vote-yes","data-total-vote" ),
+    'down_votes':("button.vote-no", "data-total-vote"),
+    'published':("span.user-post__published > time:nth-child(1)","datetime"),
+    'published':("span.user-post__published > time:nth-child(2)","datetime")
+}
+
     def __init_(self, opinion_id, author, recommend, stars, content, pros, cons, up_votes, down_votes, published, purchased ):
         self.opinion_id = opinion_id
         self.author = author
@@ -20,6 +98,10 @@ class Opinion:
         self.purchased = purchased
 
     def __str__(self): 
-        return "\n".join([f"{key}: {getattr(self,key)}" for key in self.selectors.keys()]
+        return "\n".join([f"{key}: {getattr(self,key)}" for key in self.selectors.keys()])
+    
     def __repr__(self):
         return "Opinions("+", ".join[f"{key}: {getattr(self,key)}" for key in self.selectors.keys()] +")"
+
+def to_dict(self):
+        return {key: getattr(self,key) for key in self.selectors.keys()}
