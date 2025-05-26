@@ -1,17 +1,18 @@
 
 import os
 import json
-import requests 
-import numpy as pd 
+import requests
+import numpy as np
 import pandas as pd
-from CeneoWebScraperCS12.config import headers 
 from bs4 import BeautifulSoup 
 from matplotlib import pyplot as plt
 
 
+
+
 class Product:
 
-    def __init__(self, product_id, product_name, opinions, stats):
+    def __init__(self, product_id, product_name = "", opinions= (), stats = []):
         self.product_id= product_id
         self.product_name= product_name
         self.opinions = opinions
@@ -19,11 +20,11 @@ class Product:
 
     def __str__(self):
         return f"product_id:{self.product_id}\nproduct_name: {self.product_name}\nstats: "+json.dumps(self.stats, indent=4,
-        ensure_asci=False)+"\nopinions"+"\n\n".join([str(opinion) for opinion in self.opinions])
+        ensure_ascii=False)+"\nopinions"+"\n\n".join([str(opinion) for opinion in self.opinions])
     
     def __repr__(self):
         return f"Product(product_id={self.product_id}, product_name={self.product_name}, opinions= ["+", ".join(repr(opinion) for opinion
-        in self.opinions) +f'"], stats ={self.status})"
+        in self.opinions) +f'"], stats ={self.stats})"
     
 
     def get_link(self):
